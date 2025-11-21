@@ -1,11 +1,14 @@
 // Import Express
 const express = require('express');
 const dotenv = require('dotenv');
+dotenv.config();             // Configure dotenv
 const connectDB = require('./config/db');
 const userRoutes = require('./routes/userRoutes');
+const passport = require('passport');
+require('./config/passport');
+const accountRoutes = require('./routes/accountRoutes');
 
-// Configure dotenv
-dotenv.config();
+
 // Connect to DB
 connectDB();
 
@@ -13,7 +16,10 @@ connectDB();
 const app = express();
 // This is a middleware that allows our app to parse JSON from the request body
 app.use(express.json());
+app.use(passport.initialize());
 app.use("/api/users", userRoutes);
+app.use("/api/accounts", accountRoutes);
+
 
 
 // Define the Port

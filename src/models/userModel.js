@@ -12,7 +12,12 @@ const userSchema = mongoose.Schema({
     },
     password: {
         type: String,
-        required: true,
+        // required: true,
+    },
+    googleId: {
+        type: String,
+        unique: true, 
+        sparse: true, // sparse allows multiple users to have no googleId (null) without error
     },
 },
 {

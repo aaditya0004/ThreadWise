@@ -1,13 +1,7 @@
 const User = require("../models/userModel");
-const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const generateToken = require("../utils/generateToken");
 
-// Helper fn to generate a JWT
-const generateToken = (id) => {
-    return jwt.sign({id}, process.env.JWT_SECRET, {
-        expiresIn: '30d',
-    });
-};
 
 // @desc    Register a new User
 // @route   POST /api/users/register
