@@ -49,9 +49,11 @@ const fetchEmails = (accountConfig) => {
 
                             // add the clean email to our array;
                             emails.push({
+                                messageId: parsed.messageId,
                                 subject: parsed.subject,
                                 from: parsed.from.text,
                                 date: parsed.date,
+                                body: parsed.text,
                                 snippet: parsed.text ? parsed.text.substring(0, 100) : '',      // first 100 chars
                             });
                         });

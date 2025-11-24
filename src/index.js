@@ -7,10 +7,15 @@ const userRoutes = require('./routes/userRoutes');
 const passport = require('passport');
 require('./config/passport');
 const accountRoutes = require('./routes/accountRoutes');
-
+const {connectElasticsearch, createEmailIndex} = require('./config/elasticsearch');
+const emailRoutes = require('./routes/emailRoutes');
 
 // Connect to DB
 connectDB();
+// Connect to Seacrch Engine and set up Index
+connectElasticsearch().then(() => {
+    createEmailIndex();
+});
 
 // Initialize the Express app
 const app = express();
@@ -19,7 +24,7 @@ app.use(express.json());
 app.use(passport.initialize());
 app.use("/api/users", userRoutes);
 app.use("/api/accounts", accountRoutes);
-
+app.use("/api/emails", emailRoutes);
 
 
 // Define the Port

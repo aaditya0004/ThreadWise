@@ -1,6 +1,7 @@
 const ConnectedAccount = require('../models/connectedAccountModel');
 const CryptoJS = require('crypto-js');
 const {fetchEmails} = require('../services/imapService');
+const {indexEmail} = require('../services/searchService');
 
 // @desc    Connect a new email account 
 // @route   POST /api/accounts
@@ -76,6 +77,19 @@ const getEmails = async (req, res) => {
         // 4. Call the service to fetch emails
         // This might take a few seconds, so we await it
         const emails = await fetchEmails(accountConfig);
+
+        // 5. Save emails to Elasticsearch 
+        // We loop through the fetched emails and save them one by one 
+        // In a real loop, we use bulk indexing for speed 
+        for(const email of emails){
+            await indexEmail({
+                ...email,
+                userId: req.user.id,   // Attach user id so we know who owns it 
+                accountId: account.id,  // Attach account id 
+                folder: 'INBOX',
+                isRead: false,
+            });
+        }
 
         res.json(emails);
     }
