@@ -36,7 +36,8 @@ const createEmailIndex = async () => {
                         body: {type: 'text'},
                         date: {type: 'date'},
                         folder: {type: 'keyword'},
-                        isRead: {type: 'boolean'}
+                        isRead: {type: 'boolean'},
+                        category: {type: 'keyword'}
                     }
                 }
             }

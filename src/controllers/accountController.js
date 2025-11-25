@@ -2,6 +2,7 @@ const ConnectedAccount = require('../models/connectedAccountModel');
 const CryptoJS = require('crypto-js');
 const {fetchEmails} = require('../services/imapService');
 const {indexEmail} = require('../services/searchService');
+const {categorizeEmail} = require('../services/aiService');
 
 // @desc    Connect a new email account 
 // @route   POST /api/accounts
@@ -82,13 +83,21 @@ const getEmails = async (req, res) => {
         // We loop through the fetched emails and save them one by one 
         // In a real loop, we use bulk indexing for speed 
         for(const email of emails){
+            // (1) Ask the AI to categorize the email
+            // We use the body or snippet for analysis 
+            const category = await categorizeEmail(email);
+
+            // (2) Index the email with the new category 
             await indexEmail({
                 ...email,
                 userId: req.user.id,   // Attach user id so we know who owns it 
                 accountId: account.id,  // Attach account id 
                 folder: 'INBOX',
                 isRead: false,
+                category,         // AI Label
             });
+
+            email.category = category
         }
 
         res.json(emails);
