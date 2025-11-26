@@ -3,6 +3,7 @@ const CryptoJS = require('crypto-js');
 const {fetchEmails} = require('../services/imapService');
 const {indexEmail} = require('../services/searchService');
 const {categorizeEmail} = require('../services/aiService');
+const {triggerWebhook, sendSlackAlert} = require('../services/notificationService');
 
 // @desc    Connect a new email account 
 // @route   POST /api/accounts
@@ -86,6 +87,13 @@ const getEmails = async (req, res) => {
             // (1) Ask the AI to categorize the email
             // We use the body or snippet for analysis 
             const category = await categorizeEmail(email);
+
+            // if AI thinks the email is under "INTERESTED", fire the alerts
+            if(category === 'Interested' || category === 'General'){
+                // We run them in the bg, no await, so we dont slow down the loop 
+                triggerWebhook(email);
+                sendSlackAlert(email);
+            }
 
             // (2) Index the email with the new category 
             await indexEmail({

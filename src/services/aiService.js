@@ -5,6 +5,19 @@ const ruleBasedCategory = (email) => {
     const from = (email.from || '').toLowerCase();
     const body = (email.body || email.snippet || '').toLowerCase();
 
+    // 0) Assessment / online test invited → Interested
+    if (
+        subject.includes('test') ||
+        subject.includes('assessment') ||
+        subject.includes('online test') ||
+        subject.includes('coding test') ||
+        subject.includes('conducted on') ||
+        subject.includes('exam') ||
+        subject.includes('registration') && subject.includes('test')
+    ) {
+        return 'Interested';
+    }
+
     // 1) OTP / verification / email confirmation => General
     if (
         subject.includes('verification code') ||
@@ -90,6 +103,8 @@ DEFINITIONS:
 - Interested:
     - The sender is clearly interested in the user.
     - Examples: interview invite, "we would like to talk", "we are impressed", "we want to proceed", "let's schedule a call".
+    - Emails announcing an online test, assessment date, or exam schedule 
+    (e,g., "Test to be conducted on 27th Nov", "Your assessment is scheduled") are ALWAYS "Interested".
 - Not Interested:
     - Clear rejection or negative decision.
     - Examples: "we have decided not to move forward", "unfortunately", "we went with other candidates", "not a fit right now".
@@ -98,12 +113,15 @@ DEFINITIONS:
 - Spam:
     - Marketing emails, promotions, newsletters, discount offers, bulk campaigns.
     - Job boards sending generic job listings or newsletters are Spam.
+    - DO NOT use Spam for system or product notifications exam/test registrations, coding test details, or application status updates.
 - General:
-    - Notifications, connection requests, message notifications, verification codes, password reset, email confirmations, neutral updates.
+    - Notifications, connection requests, message notifications, verification codes, password reset, email confirmations, neutral updates, system/dev alerts, exam or test registrations.
 
 IMPORTANT SPECIAL CASES:
 - Emails with verification codes or email confirmation links (like Amazon OTP, Hugging Face confirmation) are ALWAYS "General", NEVER "Spam".
 - LinkedIn message or connection notifications without clear marketing are "General".
+- Slack notifications, ThreadWise Bot emails, MongoDB Atlas cluster alerts, or other infra/system emails are "General", not Spam.
+- When you are unsure, prefer "General" instead of "Spam".
 
 EXAMPLES (study carefully):
 
@@ -136,6 +154,26 @@ Example 6:
 Subject: Nikeet just messaged you
 Body: "You have 2 new messages"
 Correct category: General
+
+Example 7:
+Subject: Update: iqigai.ai by fractal | Registration | Test to be conducted on 27th Nov 2025
+Body: "Registration and test details..."
+Correct category: General
+
+Example 8:
+Subject: Your MongoDB Atlas M0 cluster will be automatically paused in 7 days
+Body: "Your free cluster will be paused unless..."
+Correct category: General
+
+Example 9:
+Subject: ThreadWise Bot on Slack: New Account Details
+Body: "Your new account has been created..."
+Correct category: General
+
+Example 10:
+Subject: Update: iqigai.ai by fractal | Registration | Test to be conducted on 27th Nov 2025
+Body: "Your test is scheduled..."
+Correct category: Interested
 
 Now classify THIS email.
 
