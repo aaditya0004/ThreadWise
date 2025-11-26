@@ -89,7 +89,7 @@ const getEmails = async (req, res) => {
             const category = await categorizeEmail(email);
 
             // if AI thinks the email is under "INTERESTED", fire the alerts
-            if(category === 'Interested' || category === 'General'){
+            if(category === 'Interested'){
                 // We run them in the bg, no await, so we dont slow down the loop 
                 triggerWebhook(email);
                 sendSlackAlert(email);

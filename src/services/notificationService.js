@@ -39,7 +39,7 @@ const sendSlackAlert = async (emailData) => {
                 },
                 {
                     type: "section",
-                    fileds: [
+                    fields: [
                         {
                             type: "mrkdwn",
                             text: `*From*\n${emailData.from}`
