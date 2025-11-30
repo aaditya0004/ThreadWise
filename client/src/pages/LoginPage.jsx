@@ -9,6 +9,7 @@ const LoginPage = () => {
     const [error, setError] = useState('');
     const navigate = useNavigate();
     const location = useLocation();
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         // 1. Check if there is the token in the URL
@@ -48,6 +49,8 @@ const LoginPage = () => {
     const handleLogin = async (e) => {
         e.preventDefault();
 
+        if(loading) return;
+
         try{
             const {data} = await axios.post('http://localhost:5000/api/users/login', {email, password});
 
@@ -59,6 +62,9 @@ const LoginPage = () => {
         }
         catch(error){
             setError(error.response?.data?.message || "Login Failed");
+        }
+        finally{
+            setLoading(false);
         }
     };
 
@@ -117,9 +123,10 @@ const LoginPage = () => {
 
                         <button
                             type='submit'
-                            className='w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-200'
+                            disabled={loading}
+                            className={`w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'}`}
                         >
-                            Sign In
+                            {loading ? 'Signing In...' : 'Sign In'}
                         </button>
                     </form>
 
