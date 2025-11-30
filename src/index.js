@@ -9,6 +9,7 @@ require('./config/passport');
 const accountRoutes = require('./routes/accountRoutes');
 const {connectElasticsearch, createEmailIndex} = require('./config/elasticsearch');
 const emailRoutes = require('./routes/emailRoutes');
+const cors = require('cors');    
 
 // Connect to DB
 connectDB();
@@ -19,6 +20,7 @@ connectElasticsearch().then(() => {
 
 // Initialize the Express app
 const app = express();
+app.use(cors({ origin: 'http://localhost:5173' }));  // allow frontend
 // This is a middleware that allows our app to parse JSON from the request body
 app.use(express.json());
 app.use(passport.initialize());
