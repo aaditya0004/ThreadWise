@@ -1,5 +1,5 @@
-import React, {useState} from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, {useState, useEffect} from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {FcGoogle} from 'react-icons/fc';
 import axios from 'axios';
 
@@ -8,6 +8,42 @@ const LoginPage = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const navigate = useNavigate();
+    const location = useLocation();
+
+    useEffect(() => {
+        // 1. Check if there is the token in the URL
+        const params = new URLSearchParams(location.search);
+        const token = params.get('token');
+
+        if(token){
+            // 2. If token exists, we need to fetch the user's data (name, email etc)
+            // because URL only gave us the token
+            const fetchUserData = async () => {
+                try{
+                    const config = {
+                        headers: {Authorization: `Bearer ${token}`},
+                    };
+
+                    const {data} = await axios.get('/api/users/me', config);
+
+                    // 3. Construct the full user object (matching manual login structure)
+                    const userInfo = { ...data, token };
+
+                    // 4. Save to localStorage
+                    localStorage.setItem('userInfo', JSON.stringify(userInfo));
+
+                    // 5. Redirect to Dashboard
+                    navigate('/dashboard');
+                }
+                catch(error){
+                    console.error('Failed to fetch the user data with google token:', error);
+                    setError('Google Login failed, Please try again');
+                }
+            };
+
+            fetchUserData();
+        }
+    }, [location, navigate]);
 
     const handleLogin = async (e) => {
         e.preventDefault();

@@ -28,13 +28,17 @@ router.get(
         // Generate a token for them 
         const token = generateToken(req.user._id);
 
-        res.json({
+        /* res.json({
             _id: req.user._id,
             name: req.user.name,
             email: req.user.email,
             token: token,
             message: "Login Successful! Copy this token"
-        });
+        }); */
+
+        // Redirect Back to Frontend
+        // We pass the token in the URL query string so the frontend can grab it 
+        res.redirect(`http://localhost:5173/login?token=${token}`);
     }
 );
 
