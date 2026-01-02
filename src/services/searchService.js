@@ -49,4 +49,27 @@ const searchEmails = async (userId, query) => {
     }
 };
 
-module.exports = {indexEmail, searchEmails};
+// Get recent emails for user (Feed)
+const getRecentEmails = async (userId) => {
+    try{
+        const response = await esClient.search({
+            index: 'emails',
+            body: {
+                query: {
+                    term: {userId: userId}     // Just match the userId;
+                },
+                sort: [
+                    {date: {order: 'desc'}}     // Newest first
+                ],
+                size: 20    // Limit to 20
+            },
+        });
+        return response.hits.hits.map((hit) => hit._source);
+    }
+    catch (error) {
+        console.error('Error fetching recent emails:', error);
+        return [];
+    }
+}
+
+module.exports = {indexEmail, searchEmails, getRecentEmails};

@@ -35,7 +35,7 @@ const ConnectAccountPage = () => {
                 },
                 config
             );
-
+            
             // 3. Success -> go back to Dashboard
             navigate('/dashboard');
         }

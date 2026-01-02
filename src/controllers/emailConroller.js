@@ -1,4 +1,4 @@
-const {searchEmails} = require('../services/searchService');
+const {searchEmails, getRecentEmails} = require('../services/searchService');
 
 // @desc    search through synced emails
 // @route   GET /api/emails/search?q=keyword
@@ -14,4 +14,13 @@ const search = async (req, res) => {
     res.json(results);
 }
 
-module.exports = {search};
+
+// @desc    Get recent emails feed
+// @route   GET /api/emails/feed
+// @access  Private
+const getFeed = async (req, res) => {
+  const results = await getRecentEmails(req.user.id);
+  res.json(results);
+};
+
+module.exports = {search, getFeed};

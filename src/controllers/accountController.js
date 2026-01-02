@@ -116,7 +116,22 @@ const getEmails = async (req, res) => {
     }
 };
 
+// @desc  Get all connected accounts for the logged in user
+// @route GET /api/accounts
+// @access Private
+const getAccounts = async (req, res) => {
+    try{
+        const accounts = await ConnectedAccount.find({user: req.user.id}).select('email _id provider');
+        res.json(accounts);
+    }
+    catch(error){
+        console.error('getAccounts error:', error);
+        res.status(500).json({message: 'Failed to fetch accounts'});
+    }
+};
+
 module.exports = {
     connectAccount,
     getEmails,
+    getAccounts,
 };
