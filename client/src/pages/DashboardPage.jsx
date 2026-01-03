@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import {
   FiRefreshCw,
   FiSearch,
@@ -103,22 +104,59 @@ const DashboardPage = () => {
   // 4. Handle Sync
   const handleSync = async (accountId) => {
     setSyncing(true);
+    // Show a "loading" toast that stays until we finish
+    const loadingToast = toast.loading("Syncing emails with Gmail...");
+
     try {
       const userInfo = JSON.parse(localStorage.getItem("userInfo"));
       const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-      await axios.get(
+
+      // The backend returns the list of NEW emails fetched
+      const { data: newEmails } = await axios.get(
         `http://localhost:5000/api/accounts/${accountId}/emails`,
         config
       );
 
-      // If we are currently searching, don't refresh the feed, stay on results
-      // Otherwise, refresh the feed
+      // Calculate stats
+      const count = newEmails.length;
+      const interestedCount = newEmails.filter(
+        (e) => e.category === "Interested"
+      ).length;
+
+      // Dismiss the loading toast
+      toast.dismiss(loadingToast);
+
+      if (count === 0) {
+        toast("No new emails found.", { icon: "🤷‍♂️" });
+      } else {
+        // Success Toast
+        toast.success(`Synced ${count} new emails!`);
+
+        // SPECIAL ALERT: If we found job leads, show a second, exciting toast!
+        if (interestedCount > 0) {
+          setTimeout(() => {
+            toast(`🚀 Found ${interestedCount} potential job leads!`, {
+              duration: 6000,
+              icon: "🔥",
+              style: {
+                border: "1px solid #713200",
+                padding: "16px",
+                color: "#713200",
+                fontWeight: "bold",
+                background: "#FFFAEE",
+              },
+            });
+          }, 500); // Small delay so they appear one after another
+        }
+      }
+
+      // Refresh the feed
       if (!isSearching) {
         await fetchDashboardData();
       }
-      alert("Sync complete!");
     } catch (error) {
-      alert("Sync failed.");
+      toast.dismiss(loadingToast);
+      toast.error("Sync failed. Please try again.");
     } finally {
       setSyncing(false);
     }
@@ -154,28 +192,6 @@ const DashboardPage = () => {
     // Redirect to login page
     navigate("/login");
   };
-
-  //Handle Sync Button
-  /*     const handleSync = async (accountId) => {
-        setSyncing(true);
-        try {
-            const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-            const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-
-            // Call the backend to fetch from Gmail & Index to Elasticsearch
-            await axios.get(`http://localhost:5000/api/accounts/${accountId}/emails`, config);
-      
-            // After sync, refresh the feed to show new items
-            await fetchDashboardData();
-            alert('Sync complete! New emails added.');
-        } 
-        catch (error) {
-            alert('Sync failed. Check console.');
-            console.error(error);
-        } finally {
-            setSyncing(false);
-        }
-    }; */
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col relative">
