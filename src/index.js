@@ -9,7 +9,9 @@ require('./config/passport');
 const accountRoutes = require('./routes/accountRoutes');
 const {connectElasticsearch, createEmailIndex} = require('./config/elasticsearch');
 const emailRoutes = require('./routes/emailRoutes');
-const cors = require('cors');    
+const chatRoutes = require('./routes/chatRoutes');
+const cors = require('cors');   
+
 
 // Connect to DB
 connectDB();
@@ -27,7 +29,7 @@ app.use(passport.initialize());
 app.use("/api/users", userRoutes);
 app.use("/api/accounts", accountRoutes);
 app.use("/api/emails", emailRoutes);
-
+app.use('/api/chat', chatRoutes);
 
 // Define the Port
 const PORT = 5000;
