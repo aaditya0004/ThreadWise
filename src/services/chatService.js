@@ -13,7 +13,7 @@ const chatWithInbox = async (userId, query) => {
         query: {
           bool: {
             must: [
-              { term: { userId: userId } }, // Only search THIS user's emails
+              { term: { userId: userId.toString() } }, // Only search THIS user's emails
               {
                 multi_match: {
                   query: query,
@@ -29,6 +29,11 @@ const chatWithInbox = async (userId, query) => {
     });
 
     const hits = searchResponse.hits.hits;
+console.log(
+  'ES hits:',
+  searchResponse.hits.hits.length
+);
+
 
     // If no emails found, return early
     if (hits.length === 0) {

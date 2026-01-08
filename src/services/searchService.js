@@ -21,12 +21,16 @@ const indexEmail = async (emailData) => {
 // 2. Search Emails
 const searchEmails = async (userId, query) => {
     try{
+        const mapping = await esClient.indices.getMapping({ index: 'emails' });
+        console.dir(mapping.emails.mappings.properties.userId, { depth: null });
+
         const response = await esClient.search({
             body:{
                 query:{
                     bool:{
                         must:[
-                            {term: {userId: userId}},   // Only Show emails for this user
+                            // {term: {userId: userId}},   // Only Show emails for this user
+                            {term: {userId: userId.toString()}},   // Only Show emails for this user
                             {
                                 multi_match:{
                                     query: query,
@@ -56,7 +60,8 @@ const getRecentEmails = async (userId) => {
             index: 'emails',
             body: {
                 query: {
-                    term: {userId: userId}     // Just match the userId;
+                    term: {userId: userId.toString()}     // Just match the userId;
+                    // term: {userId: userId}     // Just match the userId;
                 },
                 sort: [
                     {date: {order: 'desc'}}     // Newest first
