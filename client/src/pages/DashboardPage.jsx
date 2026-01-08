@@ -14,6 +14,7 @@ import {
   FiTrash2,
   FiLogOut,
 } from "react-icons/fi"; // Icons
+import ChatAssistant from '../components/ChatAssistant';
 
 const DashboardPage = () => {
   const [accounts, setAccounts] = useState([]);
@@ -405,6 +406,9 @@ const DashboardPage = () => {
           </div>
         </div>
       )}
+
+      {/* Chat Assistant */}
+      <ChatAssistant />
     </div>
   );
 };
