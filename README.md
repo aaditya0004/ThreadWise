@@ -151,13 +151,18 @@ docker run --name threadwise-es -d -p 9200:9200 -e "discovery.type=single-node" 
 
 
 ## 🔮 Roadmap
-* [x] User Authentication (JWT + OAuth)
 
-* [x] IMAP Integration
+[x] User Authentication (JWT + OAuth)
 
-* [x] Local AI Classification
+[x] IMAP Integration
 
-* [x] Full-Text Search
+[x] Local AI Classification
+
+[x] Full-Text Search
+
+[x] Chat with Inbox (RAG)
+
+[x] Account Management (Delete/Logout)
 
 🤝 Contributing
 Contributions are welcome! Please open an issue or submit a pull request.
