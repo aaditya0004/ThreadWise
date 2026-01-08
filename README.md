@@ -12,7 +12,24 @@
 ---
 
 ## 📸 Screenshots
-*(You can add screenshots here later once you take them!)*
+
+### 🧠 AI & Dashboard
+| **Unified Inbox Feed** | **AI Chat Assistant (RAG)** |
+|:---:|:---:|
+| ![Dashboard](assets/dashboard.png) | ![AI Assistant](assets/assistant.png) |
+| *Smart feed with auto-categorization* | *Ask questions to your inbox contextually* |
+
+### ⚡ Smart Features
+| **Secure Mailbox Connection** | **Email Details Modal** |
+|:---:|:---:|
+| ![Connect Mailbox](assets/connect.png) | ![Email Details](assets/mail.png) |
+| *Securely link Gmail via App Passwords* | *Read full emails without leaving the feed* |
+
+### 🔍 Search & Auth
+| **Instant Search** | **User Registration** | **Secure Login** |
+|:---:|:---:|:---:|
+| ![Search](assets/search.png) | ![Register](assets/register.png) | ![Login](assets/login.png) |
+| *Find any email instantly with Elasticsearch* | *Secure Registration* | *Secure Login* | 
 
 ---
 
@@ -22,6 +39,7 @@ Modern email is broken. We have too many accounts and too much noise. ThreadWise
 2.  **Local Privacy:** Uses **Ollama** to run AI models locally on your machine—your data never leaves your specialized backend.
 3.  **Instant Search:** Powered by **Elasticsearch** for sub-second retrieval of thousands of emails.
 4.  **Smart Labeling:** Automatically tags emails as `Interested`, `Meeting Booked`, or `Spam` using Zero-Shot Classification.
+5.  **Chat with Data:** Uses **RAG (Retrieval Augmented Generation)** so you can ask "Did I get any job offers?" and get an instant answer.
 
 ---
 
@@ -43,6 +61,7 @@ Modern email is broken. We have too many accounts and too much noise. ThreadWise
 
 * **🔐 Secure Authentication:** Hybrid login system supporting standard Email/Password and **Google OAuth**.
 * **📧 IMAP Sync Engine:** Securely connects to Gmail using App Passwords and fetches emails in real-time.
+* **🧠 Chat with Inbox (RAG):** A floating AI assistant that answers questions based on your email context.
 * **🤖 AI Categorization:** Inspects email content using **Llama 3.2** (via Ollama) to assign context-aware labels.
 * **🔎 Full-Text Search:** Elasticsearch index allows for finding any email by keyword instantly.
 * **🔔 Real-Time Alerts:** Webhook and Slack integrations notify you of "Interested" leads immediately.
