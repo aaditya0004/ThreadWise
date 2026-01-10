@@ -157,9 +157,6 @@ const deleteAccount = async (req, res) => {
       return res.status(404).json({ message: "Account not found" });
     }
 
-    // Optional: You could also delete all emails from Elasticsearch here
-    // using a "delete by query" call, but for now, let's just remove the link.
-
     res.json({ message: "Account removed" });
   } catch (error) {
     console.error(error);
