@@ -5,7 +5,7 @@
 ![Node.js](https://img.shields.io/badge/Node.js-v18%2B-green)
 ![React](https://img.shields.io/badge/React-v19-blue)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-v4-cyan)
-![Status](https://img.shields.io/badge/Status-Active_Development-orange)
+
 
 > **ThreadWise** is a modern, full-stack email client that unifies your inboxes and uses **Local AI (LLMs)** to categorize, index, and understand your communications. Say goodbye to information overload.
 
