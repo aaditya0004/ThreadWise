@@ -11,6 +11,7 @@ const {connectElasticsearch, createEmailIndex} = require('./config/elasticsearch
 const emailRoutes = require('./routes/emailRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const cors = require('cors');   
+const { startAutoSync } = require('./jobs/syncJob');
 
 
 // Connect to DB
@@ -32,13 +33,15 @@ app.use("/api/emails", emailRoutes);
 app.use('/api/chat', chatRoutes);
 
 // Define the Port
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 // Create a basic route 
 // This tells our server how to respond when someone visits the main URL
 app.get('/', (req, res) => {
     res.send("API is running.....");
 });
+
+startAutoSync();
 
 // Start the Server
 app.listen(PORT, () => {

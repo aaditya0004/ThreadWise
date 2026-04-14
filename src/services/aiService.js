@@ -1,12 +1,21 @@
 const axios = require('axios');
 
-const ruleBasedCategory = (email) => {
+// Helper to check if any comma-separated keywords exist in the text
+const containsKeyword = (text, keywordString) => {
+    if (!keywordString) return false;
+    const keywords = keywordString.split(',').map(k => k.trim().toLowerCase());
+    return keywords.some(keyword => text.includes(keyword));
+};
+
+// Now accepts userRules as the second argument
+const ruleBasedCategory = (email, userRules) => {
     const subject = (email.subject || '').toLowerCase();
     const from = (email.from || '').toLowerCase();
     const body = (email.body || email.snippet || '').toLowerCase();
+    const fullText = `${subject} ${from} ${body}`;
 
     // 0) Assessment / online test invited → Interested
-    if (
+    /* if (
         subject.includes('test') ||
         subject.includes('assessment') ||
         subject.includes('online test') ||
@@ -16,31 +25,29 @@ const ruleBasedCategory = (email) => {
         subject.includes('registration') && subject.includes('test')
     ) {
         return 'Interested';
+    } */
+
+    // CUSTOM User "Interested" Rules
+    if (containsKeyword(fullText, userRules.interestedKeywords)) {
+        return 'Interested';
     }
 
     // 1) OTP / verification / email confirmation => General
     if (
-        subject.includes('verification code') ||
-        body.includes('verification code') ||
-        subject.includes('confirm your email') ||
-        body.includes('confirm your email') ||
-        subject.includes('confirmation code') ||
-        body.includes('one-time password') ||
-        body.includes('otp')
+        fullText.includes('verification code') ||
+        fullText.includes('confirm your email') ||
+        fullText.includes('one-time password') ||
+        fullText.includes('verification code') ||
+        fullText.includes('password reset') ||
+        fullText.includes('share feedback') ||
+        fullText.includes('satisfaction survey') ||
+        fullText.includes('satisfaction survey') ||
+        fullText.includes('otp')
     ) {
         return 'General';
     }
 
-    // 2) Application feedback / survey emails => General
-    if (
-        subject.includes('share feedback') ||
-        subject.includes('satisfaction survey') ||
-        body.includes('satisfaction survey')
-    ) {
-        return 'General';
-    }
-
-    // 3) Job board newsletters / campaigns => Spam
+/*     // 3) Job board newsletters / campaigns => Spam
     if (
         from.includes('dare2compete.news') ||
         from.includes('unstop') ||
@@ -50,6 +57,11 @@ const ruleBasedCategory = (email) => {
         subject.includes('last chance') ||
         subject.includes('final call')
     ) {
+        return 'Spam';
+    } */
+
+    // CUSTOM User "Spam" Rules
+    if (containsKeyword(fullText, userRules.spamKeywords)) {
         return 'Spam';
     }
 
@@ -70,11 +82,12 @@ const ruleBasedCategory = (email) => {
     return null;
 };
 
-const categorizeEmail = async (email) => {
+// Now accepts userRules as the second argument
+const categorizeEmail = async (email, userRules) => {
     // 0. Rule-based shortcut
-    const ruleCategory = ruleBasedCategory(email);
+    const ruleCategory = ruleBasedCategory(email, userRules);
     if (ruleCategory) {
-        console.log(`✅ Rule-based category: ${ruleCategory} for subject "${email.subject}"`);
+        console.log(`✅ Custom Rule matched: ${ruleCategory} for "${email.subject}"`);
         return ruleCategory;
     }
 
@@ -91,91 +104,15 @@ const categorizeEmail = async (email) => {
 
     const prompt = `
 You are an email classifier for a personal inbox.
+Classify this email into EXACTLY ONE of these categories: Interested, Not Interested, Meeting Booked, Spam, General.
 
-You must classify this email into EXACTLY ONE of these categories:
-- Interested
-- Not Interested
-- Meeting Booked
-- Spam
-- General
+USER'S CUSTOM DEFINITIONS:
+- Interested: Any email containing concepts related to: ${userRules.interestedKeywords}.
+- Spam: Any email containing concepts related to: ${userRules.spamKeywords}.
+- Not Interested: Clear rejections.
+- Meeting Booked: Calendar invites or confirmed meeting times.
+- General: Everything else (receipts, notifications, OTPs, standard updates).
 
-DEFINITIONS:
-- Interested:
-    - The sender is clearly interested in the user.
-    - Examples: interview invite, "we would like to talk", "we are impressed", "we want to proceed", "let's schedule a call".
-    - Emails announcing an online test, assessment date, or exam schedule 
-    (e,g., "Test to be conducted on 27th Nov", "Your assessment is scheduled") are ALWAYS "Interested".
-- Not Interested:
-    - Clear rejection or negative decision.
-    - Examples: "we have decided not to move forward", "unfortunately", "we went with other candidates", "not a fit right now".
-- Meeting Booked:
-    - A specific meeting time/date is CONFIRMED or a calendar invite is sent.
-- Spam:
-    - Marketing emails, promotions, newsletters, discount offers, bulk campaigns.
-    - Job boards sending generic job listings or newsletters are Spam.
-    - DO NOT use Spam for system or product notifications exam/test registrations, coding test details, or application status updates.
-- General:
-    - Notifications, connection requests, message notifications, verification codes, password reset, email confirmations, neutral updates, system/dev alerts, exam or test registrations.
-
-IMPORTANT SPECIAL CASES:
-- Emails with verification codes or email confirmation links (like Amazon OTP, Hugging Face confirmation) are ALWAYS "General", NEVER "Spam".
-- LinkedIn message or connection notifications without clear marketing are "General".
-- Slack notifications, ThreadWise Bot emails, MongoDB Atlas cluster alerts, or other infra/system emails are "General", not Spam.
-- When you are unsure, prefer "General" instead of "Spam".
-
-EXAMPLES (study carefully):
-
-Example 1:
-Subject: Your amazon.jobs verification code
-Body: "YOUR AMAZON.JOBS VERIFICATION CODE ... This code will be active for 10 minutes..."
-Correct category: General
-
-Example 2:
-Subject: [Hugging Face] Click this link to confirm your email address
-Body: "Confirm your email address by clicking on this link..."
-Correct category: General
-
-Example 3:
-Subject: New jobs: Lead - Full Stack Engineer at Finovant and 6 more jobs
-Body: "Hi Aaditya! I've found 7 new jobs that might interest you!"
-Correct category: Spam
-
-Example 4:
-Subject: Regarding your application to Cohesity
-Body: "Thank you for applying ... unfortunately we will not move forward..."
-Correct category: Not Interested
-
-Example 5:
-Subject: Aaditya - Share feedback on your application process with Cohesity
-Body: "We would love to hear your feedback on our application process..."
-Correct category: General
-
-Example 6:
-Subject: Nikeet just messaged you
-Body: "You have 2 new messages"
-Correct category: General
-
-Example 7:
-Subject: Update: iqigai.ai by fractal | Registration | Test to be conducted on 27th Nov 2025
-Body: "Registration and test details..."
-Correct category: General
-
-Example 8:
-Subject: Your MongoDB Atlas M0 cluster will be automatically paused in 7 days
-Body: "Your free cluster will be paused unless..."
-Correct category: General
-
-Example 9:
-Subject: ThreadWise Bot on Slack: New Account Details
-Body: "Your new account has been created..."
-Correct category: General
-
-Example 10:
-Subject: Update: iqigai.ai by fractal | Registration | Test to be conducted on 27th Nov 2025
-Body: "Your test is scheduled..."
-Correct category: Interested
-
-Now classify THIS email.
 
 EMAIL:
 Subject: ${email.subject || '(no subject)'}

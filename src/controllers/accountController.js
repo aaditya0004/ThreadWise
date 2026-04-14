@@ -91,13 +91,16 @@ const getEmails = async (req, res) => {
     // This might take a few seconds, so we await it
     const emails = await fetchEmails(accountConfig);
 
+    const user = await require('../models/userModel').findById(req.user.id);
+    const customRules = user.customRules || {};
+
     // 5. Save emails to Elasticsearch
     // We loop through the fetched emails and save them one by one
     // In a real loop, we use bulk indexing for speed
     for (const email of emails) {
       // (1) Ask the AI to categorize the email
       // We use the body or snippet for analysis
-      const category = await categorizeEmail(email);
+      const category = await categorizeEmail(email, customRules);
 
       // if AI thinks the email is under "INTERESTED", fire the alerts
       if (category === "Interested") {

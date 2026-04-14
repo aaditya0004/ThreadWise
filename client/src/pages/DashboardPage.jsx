@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -13,8 +13,9 @@ import {
   FiTag,
   FiTrash2,
   FiLogOut,
+  FiSettings,
 } from "react-icons/fi"; // Icons
-import ChatAssistant from '../components/ChatAssistant';
+import ChatAssistant from "../components/ChatAssistant";
 
 const DashboardPage = () => {
   const [accounts, setAccounts] = useState([]);
@@ -26,37 +27,78 @@ const DashboardPage = () => {
   const [isSearching, setIsSearching] = useState(false);
   // Modal State
   const [selectedEmail, setSelectedEmail] = useState(null);
+  // Settings Modal State
+  const [showSettings, setShowSettings] = useState(false);
+  const [interestedKeywords, setInterestedKeywords] = useState(
+    "interview, assessment, offer",
+  );
+  const [spamKeywords, setSpamKeywords] = useState(
+    "newsletter, marketing, promotional",
+  );
 
   const navigate = useNavigate();
+  const isSearchingRef = useRef(isSearching);
+  useEffect(() => {
+    isSearchingRef.current = isSearching;
+  }, [isSearching]);
 
   // 1. Fetch data on Load
   useEffect(() => {
-    fetchDashboardData();
+    // 1. Initial load
+    fetchDashboardData(false);
+
+    // 2. Poll every 15 seconds (lowered for easier testing)
+    const intervalId = setInterval(() => {
+      // Use the ref to check the current truth, avoiding the closure trap!
+      if (!isSearchingRef.current) {
+        console.log("Silent frontend poll for new emails...");
+        fetchDashboardData(true);
+      }
+    }, 15000);
+
+    return () => clearInterval(intervalId);
   }, []);
 
-  const fetchDashboardData = async () => {
-    setLoading(true);
-    // Explicitly reset search state when fetching full dashboard
+  const fetchDashboardData = async (isSilent = false) => {
+    if (!isSilent) setLoading(true); // Only show spinner if not silent
     setIsSearching(false);
+
+    // setLoading(true);
+    // Explicitly reset search state when fetching full dashboard
+    // setIsSearching(false);
     // We do NOT clear searchQuery here, in case the user wants to type while loading
+
     try {
       const userInfo = JSON.parse(localStorage.getItem("userInfo"));
       const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
 
       // Parallel requests: Get connected accounts AND recent emails
-      const [accountsRes, emailsRes] = await Promise.all([
+      const [accountsRes, emailsRes, userRes] = await Promise.all([
         axios.get("http://localhost:5000/api/accounts", config),
-        axios.get("http://localhost:5000/api/emails/feed", config),
+        // CACHE BUSTER ADDED BELOW: ?t=${Date.now()}
+        axios.get(
+          `http://localhost:5000/api/emails/feed?t=${Date.now()}`,
+          config,
+        ),
+        axios.get("http://localhost:5000/api/users/me", config),
       ]);
       console.log("ACCOUNTS:", accountsRes.data);
 
       setAccounts(accountsRes.data);
       setEmails(emailsRes.data);
+
+      // Populate the settings modal with the user's actual saved rules
+      if (userRes.data && userRes.data.customRules) {
+        setInterestedKeywords(
+          userRes.data.customRules.interestedKeywords || "",
+        );
+        setSpamKeywords(userRes.data.customRules.spamKeywords || "");
+      }
     } catch (error) {
       console.error("Dashboard fetch error:", error.response?.data || error);
       console.error("Error fetching dashboard data", error);
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   };
 
@@ -67,7 +109,7 @@ const DashboardPage = () => {
     // If user clears the input manually, instantly revert to feed
     if (value === "") {
       setIsSearching(false);
-      fetchDashboardData();
+      fetchDashboardData(false);
     }
   };
 
@@ -86,7 +128,7 @@ const DashboardPage = () => {
       // Call our Search Endpoint
       const { data } = await axios.get(
         `http://localhost:5000/api/emails/search?q=${searchQuery}`,
-        config
+        config,
       );
       setEmails(data);
     } catch (error) {
@@ -99,7 +141,7 @@ const DashboardPage = () => {
   // 3. Clear Search
   const clearSearch = () => {
     setSearchQuery("");
-    fetchDashboardData(); // Go back to the main feed
+    fetchDashboardData(false); // Go back to the main feed
   };
 
   // 4. Handle Sync
@@ -115,13 +157,13 @@ const DashboardPage = () => {
       // The backend returns the list of NEW emails fetched
       const { data: newEmails } = await axios.get(
         `http://localhost:5000/api/accounts/${accountId}/emails`,
-        config
+        config,
       );
 
       // Calculate stats
       const count = newEmails.length;
       const interestedCount = newEmails.filter(
-        (e) => e.category === "Interested"
+        (e) => e.category === "Interested",
       ).length;
 
       // Dismiss the loading toast
@@ -153,7 +195,7 @@ const DashboardPage = () => {
 
       // Refresh the feed
       if (!isSearching) {
-        await fetchDashboardData();
+        await fetchDashboardData(true);
       }
     } catch (error) {
       toast.dismiss(loadingToast);
@@ -174,11 +216,11 @@ const DashboardPage = () => {
 
       await axios.delete(
         `http://localhost:5000/api/accounts/${accountId}`,
-        config
+        config,
       );
 
       // Refresh the list
-      fetchDashboardData();
+      fetchDashboardData(false);
       alert("Account removed successfully");
     } catch (error) {
       console.error(error);
@@ -192,6 +234,29 @@ const DashboardPage = () => {
     localStorage.removeItem("userInfo");
     // Redirect to login page
     navigate("/login");
+  };
+
+  // 7. Handle SaveSettings
+  const handleSaveSettings = async () => {
+    try {
+      const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+      const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+
+      await axios.put(
+        "http://localhost:5000/api/users/rules",
+        {
+          interestedKeywords,
+          spamKeywords,
+        },
+        config,
+      );
+
+      toast.success("Custom AI rules updated!");
+      fetchDashboardData(false);
+      setShowSettings(false);
+    } catch (error) {
+      toast.error("Failed to save rules");
+    }
   };
 
   return (
@@ -230,13 +295,20 @@ const DashboardPage = () => {
             <FiPlus /> <span className="hidden md:inline">Link Mailbox</span>
           </Link>
           <button
-            onClick={fetchDashboardData}
+            onClick={() => fetchDashboardData(false)}
             className="flex items-center gap-2 border border-gray-300 px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-600"
           >
             <FiRefreshCw />
           </button>
           {/* Vertical Divider */}
           <div className="h-6 w-px bg-gray-300 mx-1"></div>{" "}
+          <button
+            onClick={() => setShowSettings(true)}
+            className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition px-2"
+            title="AI Settings"
+          >
+            <FiSettings size={20} />
+          </button>
           <button
             onClick={handleLogout}
             className="flex items-center gap-2 text-gray-500 hover:text-red-600 transition px-2"
@@ -403,6 +475,65 @@ const DashboardPage = () => {
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* SETTINGS MODAL */}
+      {showSettings && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl flex flex-col overflow-hidden p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-900">
+                Custom AI Rules
+              </h2>
+              <button
+                onClick={() => setShowSettings(false)}
+                className="text-gray-500 hover:text-gray-800"
+              >
+                <FiX size={24} />
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-500 mb-6">
+              Teach your local AI what is important to YOU. Separate keywords
+              with commas.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-green-700 mb-1">
+                  "Interested" Keywords
+                </label>
+                <textarea
+                  className="w-full border rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 outline-none"
+                  rows="2"
+                  value={interestedKeywords}
+                  onChange={(e) => setInterestedKeywords(e.target.value)}
+                  placeholder="e.g. hackathon, startup, freelance, reactjs"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-red-700 mb-1">
+                  "Spam" Keywords
+                </label>
+                <textarea
+                  className="w-full border rounded-lg p-3 text-sm focus:ring-2 focus:ring-red-500 outline-none"
+                  rows="2"
+                  value={spamKeywords}
+                  onChange={(e) => setSpamKeywords(e.target.value)}
+                  placeholder="e.g. sale, limited time, newsletter"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={handleSaveSettings}
+              className="mt-6 w-full bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700"
+            >
+              Save AI Rules
+            </button>
           </div>
         </div>
       )}

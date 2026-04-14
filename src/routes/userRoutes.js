@@ -2,7 +2,7 @@ const express = require('express');
 const passport = require('passport');
 const generateToken = require('../utils/generateToken');
 const router = express.Router();
-const {registerUser, loginUser, getMe} = require("../controllers/userController");
+const {registerUser, loginUser, getMe, updateUserRules} = require("../controllers/userController");
 const {protect} = require("../middlewares/authMiddleware");
 const rateLimit = require("express-rate-limit");
 
@@ -19,6 +19,7 @@ const loginLimiter = rateLimit({
 router.post('/register', registerUser);
 router.post('/login', loginLimiter, loginUser);
 router.get('/me', protect, getMe);
+router.put('/rules', protect, updateUserRules);
 
 // Google OAuth Routes
 

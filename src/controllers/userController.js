@@ -1,3 +1,4 @@
+const { esClient } = require('../config/elasticsearch');
 const User = require("../models/userModel");
 const bcrypt = require("bcryptjs");
 const generateToken = require("../utils/generateToken");
@@ -84,6 +85,85 @@ const loginUser = async (req, res) => {
     }
 };
 
+// @desc    Update User Custom Email Rules
+// @route   PUT /api/users/rules
+// @access  Private
+const updateUserRules = async (req, res) => {
+    const { interestedKeywords, spamKeywords } = req.body;
+
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Update rules in DB
+        user.customRules.interestedKeywords = interestedKeywords || user.customRules.interestedKeywords;
+        user.customRules.spamKeywords = spamKeywords || user.customRules.spamKeywords;
+
+        const updatedUser = await user.save();
+
+        // RETROACTIVE UPDATE: Re-classify the last 50 emails in Elasticsearch
+        // We do a quick keyword scan over existing emails so the UI updates instantly.
+        try {
+            const recentEmails = await esClient.search({
+                index: 'emails',
+                body: {
+                    query: { term: { userId: req.user.id } },
+                    size: 50,
+                    sort: [{ date: { order: 'desc' } }]
+                }
+            });
+
+            const hits = recentEmails.hits.hits;
+            const rules = updatedUser.customRules;
+
+            // Simple helper to check keywords
+            const containsKeyword = (text, keywordString) => {
+                if (!keywordString) return false;
+                const keywords = keywordString.split(',').map(k => k.trim().toLowerCase());
+                return keywords.some(keyword => text.includes(keyword));
+            };
+
+            for (const hit of hits) {
+                const source = hit._source;
+                const fullText = `${source.subject} ${source.from} ${source.body}`.toLowerCase();
+                
+                let newCategory = 'General'; // Default fallback
+
+                // Apply new custom rules
+                if (containsKeyword(fullText, rules.interestedKeywords)) {
+                    newCategory = 'Interested';
+                } else if (containsKeyword(fullText, rules.spamKeywords)) {
+                    newCategory = 'Spam';
+                } else if (source.category === 'Meeting Booked' || source.category === 'Not Interested') {
+                     // Preserve AI specific categories that aren't rule-based
+                    newCategory = source.category;
+                }
+
+                // Update Elasticsearch document if the category changed
+                if (newCategory !== source.category) {
+                    await esClient.update({
+                        index: 'emails',
+                        id: hit._id,
+                        body: { doc: { category: newCategory } }
+                    });
+                }
+            }
+        } catch (esError) {
+            console.log("Failed to retroactively update emails in ES", esError);
+            // We don't fail the whole request if ES update fails
+        }
+
+        res.json({
+            message: "Rules updated and applied to recent emails!",
+            customRules: updatedUser.customRules
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Server error updating rules" });
+    }
+};
+
 // @desc    Get User data
 // @route   GET /api/users/me
 // @access  Private
@@ -96,4 +176,5 @@ module.exports = {
     registerUser,
     loginUser,
     getMe,
+    updateUserRules,
 };
