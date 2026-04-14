@@ -4,9 +4,20 @@ const generateToken = require('../utils/generateToken');
 const router = express.Router();
 const {registerUser, loginUser, getMe} = require("../controllers/userController");
 const {protect} = require("../middlewares/authMiddleware");
+const rateLimit = require("express-rate-limit");
+
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // only 5 attempts allowed
+    message: {
+        message: "Too many login attempts. Try again after 15 minutes"
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 
 router.post('/register', registerUser);
-router.post('/login', loginUser);
+router.post('/login', loginLimiter, loginUser);
 router.get('/me', protect, getMe);
 
 // Google OAuth Routes

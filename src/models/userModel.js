@@ -9,6 +9,7 @@ const userSchema = mongoose.Schema({
         type: String,
         required: true,
         unique: true,
+        match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "Please use a valid email address"],
     },
     password: {
         type: String,
@@ -19,6 +20,18 @@ const userSchema = mongoose.Schema({
         unique: true, 
         sparse: true, // sparse allows multiple users to have no googleId (null) without error
     },
+
+    // For Custom AI rules;
+    customRules: {
+        interestedKeywords: { 
+            type: String, 
+            default: "interview, assessment, coding test, offer, shortlist" 
+        },
+        spamKeywords: { 
+            type: String, 
+            default: "newsletter, marketing, promotional, unsubscribe, digest" 
+        }
+    }
 },
 {
     timestamps: true,

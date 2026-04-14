@@ -133,7 +133,10 @@ docker run --name threadwise-es -d -p 9200:9200 -e "discovery.type=single-node" 
 ```
 #### Start Local AI (Ollama):
 
-#### ollama run llama3.2
+```bash
+ollama run llama3.2
+```
+
 **📖 Usage Guide**
 
 * **Register:** Create an account or sign in with Google.

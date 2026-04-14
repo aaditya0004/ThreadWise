@@ -17,6 +17,18 @@ const registerUser = async (req, res) => {
         return;
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: "Invalid email format" });
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
+    if (!passwordRegex.test(password)) {
+        return res.status(400).json({
+            message: "Password must be at least 6 characters and include uppercase, lowercase, and a number"
+        });
+    }
+
     // checks if a user with that email already exist
     const userExists = await User.findOne({email});
     if(userExists){
