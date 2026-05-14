@@ -1,86 +1,53 @@
 const axios = require('axios');
 
-// Helper to check if any comma-separated keywords exist in the text
 const containsKeyword = (text, keywordString) => {
     if (!keywordString) return false;
-    const keywords = keywordString.split(',').map(k => k.trim().toLowerCase());
+    const keywords = keywordString.split(',')
+        .map(k => k.trim().toLowerCase())
+        .filter(k => k.length > 0); // <--- THIS FIXES THE EMPTY STRING BUG
+        
+    if (keywords.length === 0) return false;
     return keywords.some(keyword => text.includes(keyword));
 };
 
-// Now accepts userRules as the second argument
 const ruleBasedCategory = (email, userRules) => {
     const subject = (email.subject || '').toLowerCase();
     const from = (email.from || '').toLowerCase();
     const body = (email.body || email.snippet || '').toLowerCase();
     const fullText = `${subject} ${from} ${body}`;
 
-    // 0) Assessment / online test invited → Interested
-    /* if (
-        subject.includes('test') ||
-        subject.includes('assessment') ||
-        subject.includes('online test') ||
-        subject.includes('coding test') ||
-        subject.includes('conducted on') ||
-        subject.includes('exam') ||
-        subject.includes('registration') && subject.includes('test')
-    ) {
-        return 'Interested';
-    } */
-
-    // CUSTOM User "Interested" Rules
-    if (containsKeyword(fullText, userRules.interestedKeywords)) {
-        return 'Interested';
-    }
-
-    // 1) OTP / verification / email confirmation => General
+    // SYSTEM SHIELD: 1) OTP / Banking / System Emails ALWAYS go to General
     if (
         fullText.includes('verification code') ||
         fullText.includes('confirm your email') ||
         fullText.includes('one-time password') ||
-        fullText.includes('verification code') ||
         fullText.includes('password reset') ||
         fullText.includes('share feedback') ||
         fullText.includes('satisfaction survey') ||
-        fullText.includes('satisfaction survey') ||
-        fullText.includes('otp')
+        fullText.includes('otp') 
     ) {
         return 'General';
     }
 
-/*     // 3) Job board newsletters / campaigns => Spam
-    if (
-        from.includes('dare2compete.news') ||
-        from.includes('unstop') ||
-        from.includes('wellfound') ||
-        from.includes('naukri') ||
-        subject.includes('new jobs') ||
-        subject.includes('last chance') ||
-        subject.includes('final call')
-    ) {
-        return 'Spam';
-    } */
+    // CUSTOM 2) User "Interested" Rules
+    if (containsKeyword(fullText, userRules.interestedKeywords)) {
+        return 'Interested';
+    }
 
-    // CUSTOM User "Spam" Rules
+    // CUSTOM 3) User "Spam" Rules
     if (containsKeyword(fullText, userRules.spamKeywords)) {
         return 'Spam';
     }
 
-    // 4) LinkedIn digests / message notifications => General
-    if (
-        from.includes('linkedin.com') &&
-        (subject.includes('messaged you') ||
-         subject.includes('connections') ||
-         subject.includes('job alert') ||
-         subject.includes('posts got') ||
-         subject.includes('you have') ||
-         subject.includes('notifications'))
-    ) {
+    // 4) LinkedIn notifications
+    if (from.includes('linkedin.com') && (subject.includes('messaged you') || subject.includes('connections'))) {
         return 'General';
     }
 
-    // No rule matched
+    // No rule matched, let the AI decide
     return null;
 };
+
 
 // Now accepts userRules as the second argument
 const categorizeEmail = async (email, userRules) => {
@@ -111,7 +78,7 @@ USER'S CUSTOM DEFINITIONS:
 - Spam: Any email containing concepts related to: ${userRules.spamKeywords}.
 - Not Interested: Clear rejections.
 - Meeting Booked: Calendar invites or confirmed meeting times.
-- General: Everything else (receipts, notifications, OTPs, standard updates).
+- General: Everything else (receipts, notifications, OTPs, banking, standard updates).
 
 
 EMAIL:

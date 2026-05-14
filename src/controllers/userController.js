@@ -105,6 +105,7 @@ const updateUserRules = async (req, res) => {
 
         // RETROACTIVE UPDATE: Re-classify the last 50 emails in Elasticsearch
         // We do a quick keyword scan over existing emails so the UI updates instantly.
+        // RETROACTIVE UPDATE: Re-classify the last 50 emails in Elasticsearch
         try {
             const recentEmails = await esClient.search({
                 index: 'emails',
@@ -118,10 +119,11 @@ const updateUserRules = async (req, res) => {
             const hits = recentEmails.hits.hits;
             const rules = updatedUser.customRules;
 
-            // Simple helper to check keywords
+            // Safe keyword checker
             const containsKeyword = (text, keywordString) => {
                 if (!keywordString) return false;
-                const keywords = keywordString.split(',').map(k => k.trim().toLowerCase());
+                const keywords = keywordString.split(',').map(k => k.trim().toLowerCase()).filter(k => k.length > 0);
+                if (keywords.length === 0) return false;
                 return keywords.some(keyword => text.includes(keyword));
             };
 
@@ -131,13 +133,19 @@ const updateUserRules = async (req, res) => {
                 
                 let newCategory = 'General'; // Default fallback
 
-                // Apply new custom rules
-                if (containsKeyword(fullText, rules.interestedKeywords)) {
+                // 1. Check System Shield First (Banking/OTPs)
+                if (fullText.includes('debited') || fullText.includes('credited') || fullText.includes('otp') || fullText.includes('verification')) {
+                    newCategory = 'General';
+                } 
+                // 2. Then check Custom Rules
+                else if (containsKeyword(fullText, rules.interestedKeywords)) {
                     newCategory = 'Interested';
-                } else if (containsKeyword(fullText, rules.spamKeywords)) {
+                } 
+                else if (containsKeyword(fullText, rules.spamKeywords)) {
                     newCategory = 'Spam';
-                } else if (source.category === 'Meeting Booked' || source.category === 'Not Interested') {
-                     // Preserve AI specific categories that aren't rule-based
+                } 
+                // 3. Preserve AI decisions for non-rule emails
+                else if (source.category === 'Meeting Booked' || source.category === 'Not Interested') {
                     newCategory = source.category;
                 }
 
@@ -152,7 +160,6 @@ const updateUserRules = async (req, res) => {
             }
         } catch (esError) {
             console.log("Failed to retroactively update emails in ES", esError);
-            // We don't fail the whole request if ES update fails
         }
 
         res.json({

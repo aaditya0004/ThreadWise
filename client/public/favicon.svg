@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4F46E5" /> <!-- Indigo 600 -->
+      <stop offset="100%" stop-color="#2563EB" /> <!-- Blue 600 -->
+    </linearGradient>
+    
+    <!-- Sparkle/AI Gradient -->
+    <linearGradient id="spark-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047" /> <!-- Yellow 300 -->
+      <stop offset="100%" stop-color="#F59E0B" /> <!-- Amber 500 -->
+    </linearGradient>
+    
+    <!-- Drop Shadow for Depth -->
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.15" />
+    </filter>
+  </defs>
+
+  <!-- Main Background Shape (Rounded Message Bubble) -->
+  <path d="M 15 25 C 15 15, 25 15, 35 15 L 65 15 C 75 15, 85 15, 85 25 L 85 65 C 85 75, 75 75, 65 75 L 35 75 L 18 85 C 15 87, 12 85, 13 81 L 15 70 Z" 
+        fill="url(#bg-grad)" 
+        filter="url(#shadow)" />
+
+  <!-- The "AI Spark" (Center Icon) -->
+  <path d="M 50 28 L 54 42 L 68 46 L 54 50 L 50 64 L 46 50 L 32 46 L 46 42 Z" 
+        fill="url(#spark-grad)" />
+        
+  <!-- Subtle inner details (Lines representing text/threads) -->
+  <line x1="30" y1="34" x2="42" y2="34" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" opacity="0.8" />
+  <line x1="58" y1="58" x2="70" y2="58" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" opacity="0.8" />
+</svg>

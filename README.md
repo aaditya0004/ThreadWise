@@ -8,7 +8,6 @@
 
 
 > **ThreadWise** is a modern, full-stack email client that unifies your inboxes and uses **Local AI (LLMs)** to categorize, index, and understand your communications. Say goodbye to information overload.
-
 ---
 
 ## 📸 Screenshots
@@ -37,10 +36,9 @@
 Modern email is broken. We have too many accounts and too much noise. ThreadWise solves this by:
 1.  **Unifying Accounts:** Connect multiple Gmail accounts via secure IMAP.
 2.  **Local Privacy:** Uses **Ollama** to run AI models locally on your machine—your data never leaves your specialized backend.
-3.  **Instant Search:** Powered by **Elasticsearch** for sub-second retrieval of thousands of emails.
-4.  **Smart Labeling:** Automatically tags emails as `Interested`, `Meeting Booked`, or `Spam` using Zero-Shot Classification.
+3.  **User-Steerable AI:** Define your own custom keywords for "Interested" or "Spam" categories, dynamically adjusting the AI's behavior to your specific needs.
+4.  **Real-Time Background Sync:** A Node.js background worker automatically fetches and categorizes new emails, while the React frontend silently polls for updates without interrupting your workflow.
 5.  **Chat with Data:** Uses **RAG (Retrieval Augmented Generation)** so you can ask "Did I get any job offers?" and get an instant answer.
-
 ---
 
 ## 🛠️ Tech Stack
@@ -59,14 +57,12 @@ Modern email is broken. We have too many accounts and too much noise. ThreadWise
 
 ## ✨ Key Features
 
-* **🔐 Secure Authentication:** Hybrid login system supporting standard Email/Password and **Google OAuth**.
-* **📧 IMAP Sync Engine:** Securely connects to Gmail using App Passwords and fetches emails in real-time.
-* **🧠 Chat with Inbox (RAG):** A floating AI assistant that answers questions based on your email context.
-* **🤖 AI Categorization:** Inspects email content using **Llama 3.2** (via Ollama) to assign context-aware labels.
+* **🔐 Secure Authentication:** Hybrid login system supporting standard Email/Password (with regex validation) and **Google OAuth**. Credentials are AES-encrypted before database storage.
+* **⚙️ Background Auto-Sync:** A `node-cron` worker automatically processes IMAP streams in the background, tagging emails and saving them to Elasticsearch.
+* **🧠 Chat with Inbox (RAG):** A floating AI assistant that answers questions based on your email context using local LLMs.
+* **🤖 Customizable AI Rules:** Users can input specific keywords via a Settings panel to override standard AI behavior and retroactively re-label existing emails.
 * **🔎 Full-Text Search:** Elasticsearch index allows for finding any email by keyword instantly.
-* **🔔 Real-Time Alerts:** Webhook and Slack integrations notify you of "Interested" leads immediately.
-* **📱 Responsive Dashboard:** A clean, split-screen UI built with React and Tailwind.
-
+* **🔔 Interactive Notifications:** Real-time `react-hot-toast` alerts notify you of sync completion and explicitly highlight new, high-priority emails.
 ---
 
 ## ⚙️ Getting Started
@@ -106,6 +102,7 @@ ENCRYPTION_KEY=your_encryption_key
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 SLACK_WEBHOOK_URL=your_slack_webhook (optional)
+WEBHOOK_SITE_URL=your_webhook_site_url (optional)
 ```
 
 ### Start the Backend:
@@ -143,11 +140,11 @@ ollama run llama3.2
 
 * **Connect:** Go to "Link Mailbox". Enter your Gmail address and App Password (Not your login password!).
 
-* **Sync:** Click "Sync Emails" on the dashboard sidebar.
+* **Set Rules:** Click the Gear icon to define what keywords constitute an "Interested" or "Spam" email for you.
 
-* **Wait:** The backend will fetch emails, send them to Ollama for tagging, and save them to Elasticsearch.
+* **Wait:** The background worker will automatically fetch emails, send them to Ollama for tagging based on your rules, and save them to Elasticsearch.
 
-* **Search:** Use the top bar to filter emails instantly.
+* **Search & Chat:** Use the top bar to filter emails instantly, or open the AI Chat Bubble to ask questions about your inbox.
 
 
 ---
@@ -164,6 +161,10 @@ ollama run llama3.2
 [x] Full-Text Search
 
 [x] Chat with Inbox (RAG)
+
+[x] Dynamic AI Rules & Retroactive Labeling
+
+[x] Background Auto-Sync & Silent Frontend Polling
 
 [x] Account Management (Delete/Logout)
 
